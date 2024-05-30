@@ -1,0 +1,235 @@
+name: symfony-project-build
+kind: pipeline
+type: docker
+
+trigger:
+    event:
+        - push
+        - pull_request
+
+platform:
+    os: linux
+    arch: amd64
+
+clone:
+    disable: true
+
+steps:
+
+    -   name: clone
+        image: drone/git
+        commands:
+            - git clone https://$GITHUB_TOKEN@github.com/$DRONE_REPO ./$PROJECT_NAME
+            - cd ./$PROJECT_NAME
+            - git checkout $DRONE_COMMIT
+
+
+    -   name: composer-install-dev
+        image: composer:latest
+        commands:
+            - cd ./$PROJECT_NAME
+            - export APP_ENV=dev
+            - composer install --prefer-dist
+        depends_on:
+            - clone
+
+
+    -   name: check-outdated
+        group: dependencies
+        image: composer:latest
+        commands:
+            - cd ./$PROJECT_NAME
+            - composer outdated
+        depends_on:
+            - composer-install-dev
+
+
+    -   name: check-security
+        group: dependencies
+        image: composer:latest
+        commands:
+            - cd ./$PROJECT_NAME
+            - curl -sS https://get.symfony.com/cli/installer | bash
+            - mv /root/.symfony*/bin/symfony /usr/local/bin/symfony
+            - symfony check:security
+        depends_on:
+            - composer-install-dev
+
+
+    -   name: unit-tests
+        image: php:8.2
+        commands:
+            - cd ./$PROJECT_NAME
+            - curl -L https://phar.phpunit.de/phpunit.phar -o phpunit
+            - chmod +x phpunit
+            - mv phpunit /usr/local/bin/phpunit
+            - phpunit tests
+        depends_on:
+            - check-outdated
+            - check-security
+
+
+    -   name: php-fixer
+        group: coding-standards
+        image: php:8.2
+        commands:
+            - cd ./$PROJECT_NAME
+            - curl -L https://cs.symfony.com/download/php-cs-fixer-v3.phar -o php-cs-fixer
+            - chmod a+x php-cs-fixer
+            - ./php-cs-fixer fix --dry-run --diff --stop-on-violation --config=.php-cs-fixer.dist.php
+            - php -l src
+            - php -l tests
+        depends_on:
+            - unit-tests
+
+
+    -   name: phpcs
+        group: coding-standards
+        image: php:8.2
+        commands:
+            - apt-get update && apt-get install -y git
+            - git clone https://github.com/PHPCSStandards/PHP_CodeSniffer.git /phpcs
+            - ln -s /phpcs/bin/phpcs /usr/local/bin/phpcs
+            - phpcs -nvp --standard=PSR2 ./src
+        depends_on:
+            - unit-tests
+
+
+    -   name: copy-paste-detector
+        group: quality-tools
+        image: php:8.2
+        commands:
+            - cd ./$PROJECT_NAME
+            - curl -L https://phar.phpunit.de/phpcpd.phar -o phpcpd
+            - chmod +x phpcpd
+            - ./phpcpd src
+        depends_on:
+            - php-fixer
+            - phpcs
+        when:
+            event:
+                - pull_request
+
+
+    -   name: phploc
+        group: quality-tools
+        image: php:8.2
+        commands:
+            - cd ./$PROJECT_NAME
+            - curl -L https://phar.phpunit.de/phploc.phar -o phploc
+            - chmod +x phploc
+            - ./phploc src
+        depends_on:
+            - php-fixer
+            - phpcs
+        when:
+            event:
+                - pull_request
+
+
+    -   name: phpstan
+        group: quality-tools
+        image: php:8.2
+        commands:
+            - cd ./$PROJECT_NAME
+            - vendor/bin/phpstan analyse src
+        depends_on:
+            - php-fixer
+            - phpcs
+        when:
+            event:
+                - pull_request
+
+
+    -   name: composer-install-prod-push
+        image: composer:latest
+        commands:
+            - cd ./$PROJECT_NAME
+            - export APP_ENV=prod
+            - composer install --prefer-dist --no-dev
+        depends_on:
+            - php-fixer
+            - phpcs
+        when:
+            event:
+                - push
+
+
+    -   name: composer-install-prod-pull
+        image: composer:latest
+        commands:
+            - cd ./$PROJECT_NAME
+            - export APP_ENV=prod
+            - composer install --prefer-dist --no-dev
+        depends_on:
+            - copy-paste-detector
+            - phploc
+            - phpstan
+        when:
+            event:
+                - pull_request
+
+---
+
+name: symfony-project-promote
+kind: pipeline
+type: docker
+
+trigger:
+    event:
+        - promote
+
+steps:
+    -   name: production
+        image: appleboy/drone-ssh
+        when:
+            target:
+                - production
+        settings:
+            host:
+                from_secret: docker_host
+            username:
+                from_secret: username_ssh
+            password:
+                from_secret: password_ssh
+            port: 22
+            command_timeout: 2m
+            script:
+                - |
+                    if [ ! -d "/var/www/${DRONE_REPO_NAME}-${DRONE_DEPLOY_TO}" ]; then
+                        git clone https://${GITHUB_TOKEN}@github.com/${DRONE_REPO} /var/www/${DRONE_REPO_NAME}-${DRONE_DEPLOY_TO}
+                    fi
+                - cd /var/www/${DRONE_REPO_NAME}-${DRONE_DEPLOY_TO}
+                - git fetch
+                - git reset --hard origin/${DRONE_BRANCH}
+                - git checkout ${DRONE_BRANCH}
+                - git pull origin ${DRONE_BRANCH}
+                - docker compose build
+                - docker compose down
+                - docker compose up -d --force-recreate
+
+    -   name: deployment
+        image: appleboy/drone-ssh
+        when:
+            target:
+                - deployment
+        settings:
+            host:
+                from_secret: docker_host
+            username:
+                from_secret: username_ssh
+            password:
+                from_secret: password_ssh
+            script:
+                - |
+                    if [ ! -d "/var/www/${DRONE_REPO_NAME}-${DRONE_DEPLOY_TO}" ]; then
+                        git clone https://${GITHUB_TOKEN}@github.com/${DRONE_REPO} /var/www/${DRONE_REPO_NAME}-${DRONE_DEPLOY_TO}
+                    fi
+                - cd /var/www/${DRONE_REPO_NAME}-${DRONE_DEPLOY_TO}
+                - git fetch
+                - git reset --hard origin/${DRONE_BRANCH}
+                - git checkout ${DRONE_BRANCH}
+                - git pull origin ${DRONE_BRANCH}
+                - docker compose -f docker-compose.dev.yml build
+                - docker compose -f docker-compose.dev.yml down
+                - docker compose -f docker-compose.dev.yml up -d --force-recreate

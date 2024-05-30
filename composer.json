@@ -1,4 +1,5 @@
 {
+    "description": "Technical test for Sesame HR",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
@@ -12,9 +13,8 @@
         "symfony/flex": "^2",
         "symfony/framework-bundle": "6.4.*",
         "symfony/runtime": "6.4.*",
+        "symfony/webpack-encore-bundle": "^2.1",
         "symfony/yaml": "6.4.*"
-    },
-    "require-dev": {
     },
     "config": {
         "allow-plugins": {
