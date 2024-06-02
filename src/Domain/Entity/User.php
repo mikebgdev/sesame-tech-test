@@ -2,52 +2,71 @@
 
 namespace App\Domain\Entity;
 
-use App\Domain\Repository\UserRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use App\Infrastructure\Repository\UserRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
+use OpenApi\Attributes as OA;
+use Symfony\Component\Uid\Uuid;
 
+#[OA\Schema(
+    schema: "User",
+    title: "User",
+    description: "User entity",
+    required: ["id", "name", "email", "password"],
+    type: "object"
+)]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 class User
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: "uuid")]
-    private int $id;
+    #[ORM\Column(type: "uuid", unique: true)]
+    #[OA\Property(property: "id", description: "Unique identifier", type: "string")]
+    private Uuid $id;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: "string", length: 255)]
+    #[OA\Property(property: "name", description: "Name of the user", type: "string")]
     private string $name;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: "string", length: 255)]
+    #[OA\Property(property: "email", description: "Email of the user", type: "string")]
     private string $email;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: "string", length: 255)]
+    #[OA\Property(property: "password", description: "Hashed password", type: "string")]
     private string $password;
 
-    #[ORM\Column]
+    #[ORM\Column(type: "datetime")]
+    #[OA\Property(property: "createdAt", description: "Creation timestamp", type: "string", format: "date-time")]
     private \DateTimeImmutable $createdAt;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $updatedAt;
+    #[ORM\Column(type: "datetime")]
+    #[OA\Property(property: "updatedAt", description: "Last update timestamp", type: "string", format: "date-time")]
+    private \DateTimeImmutable $updatedAt;
 
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $deletedAt = null;
+    #[ORM\Column(type: "datetime", nullable: true)]
+    #[OA\Property(property: "deletedAt", description: "Deletion timestamp", type: "string", format: "date-time", nullable: true)]
+    private ?\DateTimeImmutable $deletedAt;
 
-    /**
-     * @var Collection<int, WorkEntry>
-     */
-    #[ORM\OneToMany(targetEntity: WorkEntry::class, mappedBy: 'userId')]
-    private Collection $workEntries;
-
-    public function __construct()
+    public function __construct(string $name, string $email, string $password)
     {
-        $this->workEntries = new ArrayCollection();
+        $this->id = Uuid::v4();
+        $this->name = $name;
+        $this->email = $email;
+        $this->password = $password;
+        $this->createdAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable();
+        $this->deletedAt = null;
     }
 
-    public function getId(): int
+    public function getId(): Uuid
     {
         return $this->id;
+    }
+
+    public function setId(Uuid $id): void
+    {
+        $this->id = $id;
     }
 
     public function getName(): string
@@ -55,11 +74,9 @@ class User
         return $this->name;
     }
 
-    public function setName(string $name): static
+    public function setName(string $name): void
     {
         $this->name = $name;
-
-        return $this;
     }
 
     public function getEmail(): string
@@ -67,11 +84,9 @@ class User
         return $this->email;
     }
 
-    public function setEmail(string $email): static
+    public function setEmail(string $email): void
     {
         $this->email = $email;
-
-        return $this;
     }
 
     public function getPassword(): string
@@ -79,76 +94,40 @@ class User
         return $this->password;
     }
 
-    public function setPassword(string $password): static
+    public function setPassword(string $password): void
     {
         $this->password = $password;
-
-        return $this;
     }
 
-    public function getCreatedAt(): \DateTimeImmutable
+    public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    public function setCreatedAt(DateTimeImmutable $createdAt): void
     {
         $this->createdAt = $createdAt;
-
-        return $this;
     }
 
-    public function getUpdatedAt(): \DateTimeImmutable
+    public function getUpdatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
+    public function setUpdatedAt(DateTimeImmutable $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
-
-        return $this;
     }
 
-    public function getDeletedAt(): ?\DateTimeImmutable
+    public function getDeletedAt(): ?DateTimeImmutable
     {
         return $this->deletedAt;
     }
 
-    public function setDeletedAt(?\DateTimeImmutable $deletedAt): static
+    public function setDeletedAt(?DateTimeImmutable $deletedAt): void
     {
         $this->deletedAt = $deletedAt;
-
-        return $this;
     }
 
-    /**
-     * @return Collection<int, WorkEntry>
-     */
-    public function getWorkEntries(): Collection
-    {
-        return $this->workEntries;
-    }
 
-    public function addWorkEntry(WorkEntry $workEntry): static
-    {
-        if (!$this->workEntries->contains($workEntry)) {
-            $this->workEntries->add($workEntry);
-            $workEntry->setUserId($this);
-        }
-
-        return $this;
-    }
-
-    public function removeWorkEntry(WorkEntry $workEntry): static
-    {
-        if ($this->workEntries->removeElement($workEntry)) {
-            // set the owning side to null (unless already changed)
-            if ($workEntry->getUserId() === $this) {
-                $workEntry->setUserId($this);
-            }
-        }
-
-        return $this;
-    }
 }
