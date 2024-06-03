@@ -1,4 +1,7 @@
 <?php
+/*
+ * This class is part of a software application developed by Michael Ballester Granero.
+ */
 
 namespace App\Domain\Entity;
 
@@ -11,7 +14,7 @@ class WorkEntry
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: "uuid")]
+    #[ORM\Column(type: 'uuid')]
     private int $id;
 
     #[ORM\ManyToOne(inversedBy: 'workEntries')]

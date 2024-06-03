@@ -4,10 +4,9 @@ get_users:
     methods: GET
 
 create_user:
-    path: /api/users/
+    path: /api/users
     controller: App\Controller\UserController::createUser
     methods: POST
-
 
 get_user:
     path: /api/users/{id}
