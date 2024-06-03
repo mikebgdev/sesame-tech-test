@@ -31,6 +31,8 @@ return (new PhpCsFixer\Config())
         'no_unreachable_default_argument_value' => true,
         'comment_to_phpdoc' => true,
         'phpdoc_to_comment' => ['ignored_tags' => ['todo', 'var']],
+        'php_unit_test_class_requires_covers' => false,
+        'general_phpdoc_annotation_remove' => ['annotations' => ['internal', 'coversNothing']],
         'no_superfluous_phpdoc_tags' => false,
         'header_comment' => [
             'header' => <<< 'HEADER'

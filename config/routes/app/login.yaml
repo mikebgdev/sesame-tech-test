@@ -1,0 +1,7 @@
+api_login:
+    path: /api/login
+    controller: App\Controller\AuthApiController::login
+    methods: POST
+
+api_login_check:
+    path: /api/login_check

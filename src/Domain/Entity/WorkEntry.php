@@ -5,111 +5,131 @@
 
 namespace App\Domain\Entity;
 
-use App\Domain\Repository\WorkEntryRepository;
+use App\Infrastructure\Repository\WorkEntryRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use OpenApi\Attributes as OA;
+use Ramsey\Uuid\Doctrine\UuidGenerator;
+use Ramsey\Uuid\UuidInterface;
 
+#[OA\Schema(
+    schema: 'WorkEntry',
+    title: 'WorkEntry',
+    description: 'WorkEntry entity',
+    required: ['id', 'userId', 'startDate', 'endDate'],
+    type: 'object'
+)]
 #[ORM\Entity(repositoryClass: WorkEntryRepository::class)]
-class WorkEntry
+final class WorkEntry
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'uuid')]
-    private int $id;
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: UuidGenerator::class)]
+    #[OA\Property(property: 'id', description: 'Unique identifier', type: 'string')]
+    private UuidInterface $id;
 
-    #[ORM\ManyToOne(inversedBy: 'workEntries')]
-    #[ORM\JoinColumn(nullable: false)]
-    private User $userId;
+    #[ORM\Column(type: 'uuid')]
+    #[OA\Property(property: 'userId', description: 'User identifier', type: 'string')]
+    private UuidInterface $userId;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private \DateTimeInterface $startDate;
+    #[OA\Property(property: 'startDate', description: 'Start entry timestamp', type: 'string', format: 'date-time')]
+    private \DateTime $startDate;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $endDate = null;
+    #[OA\Property(property: 'endDate', description: 'End entry timestamp', type: 'string', format: 'date-time')]
+    private ?\DateTime $endDate;
 
-    #[ORM\Column]
-    private \DateTimeImmutable $createdAt;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[OA\Property(property: 'createdAt', description: 'Creation timestamp', type: 'string', format: 'date-time')]
+    private \DateTime $createdAt;
 
-    #[ORM\Column]
-    private \DateTimeImmutable $updatedAt;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[OA\Property(property: 'updatedAt', description: 'Last update timestamp', type: 'string', format: 'date-time')]
+    private \DateTime $updatedAt;
 
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $deletedAt = null;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[OA\Property(property: 'deletedAt', description: 'Deletion timestamp', type: 'string', format: 'date-time', nullable: true)]
+    private ?\DateTime $deletedAt;
 
-    public function getId(): int
+    public function __construct(UuidInterface $userId)
+    {
+        $this->userId = $userId;
+        $this->startDate = new \DateTime();
+        $this->endDate = null;
+        $this->createdAt = new \DateTime();
+        $this->updatedAt = new \DateTime();
+        $this->deletedAt = null;
+    }
+
+    public function getId(): UuidInterface
     {
         return $this->id;
     }
 
-    public function getUserId(): User
+    public function setId(UuidInterface $id): void
+    {
+        $this->id = $id;
+    }
+
+    public function getUserId(): UuidInterface
     {
         return $this->userId;
     }
 
-    public function setUserId(User $userId): static
+    public function setUserId(UuidInterface $userId): static
     {
         $this->userId = $userId;
-
-        return $this;
     }
 
-    public function getStartDate(): \DateTimeInterface
+    public function getStartDate(): \DateTime
     {
         return $this->startDate;
     }
 
-    public function setStartDate(\DateTimeInterface $startDate): static
+    public function setStartDate(\DateTime $startDate): void
     {
         $this->startDate = $startDate;
-
-        return $this;
     }
 
-    public function getEndDate(): ?\DateTimeInterface
+    public function getEndDate(): ?\DateTime
     {
         return $this->endDate;
     }
 
-    public function setEndDate(?\DateTimeInterface $endDate): static
+    public function setEndDate(?\DateTime $endDate): void
     {
         $this->endDate = $endDate;
-
-        return $this;
     }
 
-    public function getCreatedAt(): \DateTimeImmutable
+    public function getCreatedAt(): \DateTime
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    public function setCreatedAt(\DateTime $createdAt): void
     {
         $this->createdAt = $createdAt;
-
-        return $this;
     }
 
-    public function getUpdatedAt(): \DateTimeImmutable
+    public function getUpdatedAt(): \DateTime
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
+    public function setUpdatedAt(\DateTime $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
-
-        return $this;
     }
 
-    public function getDeletedAt(): ?\DateTimeImmutable
+    public function getDeletedAt(): ?\DateTime
     {
         return $this->deletedAt;
     }
 
-    public function setDeletedAt(?\DateTimeImmutable $deletedAt): static
+    public function setDeletedAt(?\DateTime $deletedAt): void
     {
         $this->deletedAt = $deletedAt;
-
-        return $this;
     }
 }

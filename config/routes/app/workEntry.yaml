@@ -1,0 +1,24 @@
+get_work_entries:
+    path: /api/workentry
+    controller: App\Controller\WorkEntryApiController::getAllWorkEntriesByUser
+    methods: GET
+
+get_work_entry:
+    path: /api/workentry/{id}
+    controller: App\Controller\WorkEntryApiController::getWorkEntryById
+    methods: GET
+
+start_work_entry:
+    path: /api/workentry/start
+    controller: App\Controller\WorkEntryApiController::startWorkEntry
+    methods: POST
+
+end_work_entry:
+    path: /api/workentry/end/{id}
+    controller: App\Controller\WorkEntryApiController::endWorkEntry
+    methods: PUT
+
+delete_work_entry:
+    path: /api/workentry/{id}
+    controller: App\Controller\WorkEntryApiController::deleteWorkEntry
+    methods: DELETE

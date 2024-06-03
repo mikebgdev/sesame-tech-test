@@ -9,8 +9,9 @@ use App\Domain\Entity\User;
 use App\Domain\Repository\UserRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Ramsey\Uuid\UuidInterface;
 
-class UserRepository extends ServiceEntityRepository implements UserRepositoryInterface
+final class UserRepository extends ServiceEntityRepository implements UserRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -22,23 +23,23 @@ class UserRepository extends ServiceEntityRepository implements UserRepositoryIn
         return $this->getEntityManager()->getRepository(User::class)->findAll();
     }
 
-    public function findById(string $id): ?User
+    public function getUserById(UuidInterface $id): ?User
     {
         return $this->getEntityManager()->getRepository(User::class)->find($id);
     }
 
-    public function save(User $user): void
+    public function saveUser(User $user): void
     {
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush();
     }
 
-    public function update(User $user): void
+    public function updateUser(User $user): void
     {
         $this->getEntityManager()->flush();
     }
 
-    public function delete(User $user): void
+    public function deleteUser(User $user): void
     {
         $this->getEntityManager()->flush();
     }

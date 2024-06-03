@@ -5,6 +5,7 @@
 
 namespace App\Controller;
 
+use App\Application\Service\UserSerializer;
 use App\Application\Service\UserService;
 use App\Domain\Entity\User;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -13,15 +14,17 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class UserController extends AbstractController
+class UserApiController extends AbstractController
 {
-    // TODO SERIALICER JSONRESPONSE
     private UserService $userService;
+    private UserSerializer $userSerializer;
 
-    public function __construct(UserService $userService)
+    public function __construct(UserService $userService, UserSerializer $userSerializer)
     {
         $this->userService = $userService;
+        $this->userSerializer = $userSerializer;
     }
 
     #[OA\Get(
@@ -29,7 +32,7 @@ class UserController extends AbstractController
         summary: 'Get all users',
         responses: [
             new OA\Response(
-                response: 200,
+                response: Response::HTTP_OK,
                 description: 'Users found',
                 content: new OA\JsonContent(
                     type: 'array',
@@ -37,16 +40,23 @@ class UserController extends AbstractController
                 )
             ),
             new OA\Response(
-                response: 404,
+                response: Response::HTTP_NOT_FOUND,
                 description: 'Users not found'
             ),
         ]
     )]
+    #[OA\Tag(name: 'Users')]
     public function getAllUsers(): JsonResponse
     {
         $users = $this->userService->getAllUsers();
 
-        return new JsonResponse($users, Response::HTTP_OK);
+        if ([] === $users) {
+            return new JsonResponse(['message' => 'Users not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $usersResponse = $this->userSerializer->serializeCollection($users);
+
+        return new JsonResponse($usersResponse, Response::HTTP_OK);
     }
 
     #[OA\Get(
@@ -63,37 +73,45 @@ class UserController extends AbstractController
         ],
         responses: [
             new OA\Response(
-                response: 200,
+                response: Response::HTTP_OK,
                 description: 'User found',
                 content: new OA\JsonContent(ref: new Model(type: User::class))
             ),
             new OA\Response(
-                response: 404,
+                response: Response::HTTP_BAD_REQUEST,
+                description: 'Invalid UUID'
+            ),
+            new OA\Response(
+                response: Response::HTTP_NOT_FOUND,
                 description: 'User not found'
             ),
         ]
     )]
+    #[OA\Tag(name: 'Users')]
     public function getUserById(string $id): JsonResponse
     {
-        $user = $this->userService->getUserById($id);
+        try {
+            $user = $this->userService->getUserById($id);
+        } catch (BadRequestHttpException $e) {
+            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
 
-        if (!$user) {
+        if (null === $user) {
             return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
-        return new JsonResponse($user, Response::HTTP_OK);
+        $userResponse = $this->userSerializer->serialize($user);
+
+        return new JsonResponse($userResponse, Response::HTTP_OK);
     }
 
-    /**
-     * @throws \JsonException
-     */
     #[OA\Post(
         path: '/api/users',
         summary: 'Create a new user',
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: 'username', type: 'string'),
+                    new OA\Property(property: 'name', type: 'string'),
                     new OA\Property(property: 'email', type: 'string'),
                     new OA\Property(property: 'password', type: 'string'),
                 ],
@@ -102,34 +120,37 @@ class UserController extends AbstractController
         ),
         responses: [
             new OA\Response(
-                response: 200,
+                response: Response::HTTP_OK,
                 description: 'User created successfully',
                 content: new OA\JsonContent(ref: new Model(type: User::class))
             ),
             new OA\Response(
-                response: 404,
-                description: 'User not found'
+                response: Response::HTTP_BAD_REQUEST,
+                description: 'Invalid JSON data'
             ),
         ]
     )]
+    #[OA\Tag(name: 'Users')]
     public function createUser(Request $request): JsonResponse
     {
-        $user = $this->userService->createUser($request);
+        try {
+            $user = $this->userService->createUser($request);
+        } catch (BadRequestHttpException $e) {
+            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
 
-        // TODO EXCEPTION RESPONSE
-        return new JsonResponse($user, Response::HTTP_OK);
+        $userResponse = $this->userSerializer->serialize($user);
+
+        return new JsonResponse($userResponse, Response::HTTP_OK);
     }
 
-    /**
-     * @throws \JsonException
-     */
     #[OA\Put(
         path: '/api/users/{id}',
         summary: 'Update user by ID',
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: 'username', type: 'string'),
+                    new OA\Property(property: 'name', type: 'string'),
                     new OA\Property(property: 'email', type: 'string'),
                     new OA\Property(property: 'password', type: 'string'),
                 ],
@@ -147,25 +168,36 @@ class UserController extends AbstractController
         ],
         responses: [
             new OA\Response(
-                response: 200,
+                response: Response::HTTP_OK,
                 description: 'User updated successfully',
                 content: new OA\JsonContent(ref: new Model(type: User::class))
             ),
             new OA\Response(
-                response: 404,
+                response: Response::HTTP_BAD_REQUEST,
+                description: 'Invalid UUID'
+            ),
+            new OA\Response(
+                response: Response::HTTP_NOT_FOUND,
                 description: 'User not found'
             ),
         ]
     )]
+    #[OA\Tag(name: 'Users')]
     public function updateUser(Request $request, string $id): JsonResponse
     {
-        $user = $this->userService->updateUser($request, $id);
+        try {
+            $user = $this->userService->updateUser($request, $id);
+        } catch (BadRequestHttpException $e) {
+            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
 
-        if (!$user) {
+        if (null === $user) {
             return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
-        return new JsonResponse($user, Response::HTTP_OK, [], true);
+        $userResponse = $this->userSerializer->serialize($user);
+
+        return new JsonResponse($userResponse, Response::HTTP_OK);
     }
 
     #[OA\Delete(
@@ -182,23 +214,34 @@ class UserController extends AbstractController
         ],
         responses: [
             new OA\Response(
-                response: 200,
+                response: Response::HTTP_OK,
                 description: 'User deleted successfully',
             ),
             new OA\Response(
-                response: 404,
+                response: Response::HTTP_BAD_REQUEST,
+                description: 'Invalid UUID'
+            ),
+            new OA\Response(
+                response: Response::HTTP_NOT_FOUND,
                 description: 'User not found',
             ),
         ]
     )]
+    #[OA\Tag(name: 'Users')]
     public function deleteUser(string $id): JsonResponse
     {
-        $user = $this->userService->deleteUser($id);
+        try {
+            $user = $this->userService->deleteUser($id);
+        } catch (BadRequestHttpException $e) {
+            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
 
-        if (!$user) {
+        if (null === $user) {
             return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
-        return new JsonResponse($user, Response::HTTP_NO_CONTENT);
+        $userResponse = $this->userSerializer->serialize($user);
+
+        return new JsonResponse($userResponse, Response::HTTP_OK);
     }
 }

@@ -8,61 +8,84 @@ namespace App\Application\Service;
 use App\Domain\Entity\User;
 use App\Domain\Repository\UserRepositoryInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Uid\Uuid;
 
 class UserService
 {
     private UserRepositoryInterface $userRepository;
+    private UserPasswordHasherInterface $userPasswordHasher;
 
-    public function __construct(UserRepositoryInterface $userRepository)
+    public function __construct(UserRepositoryInterface $userRepository, UserPasswordHasherInterface $userPasswordHasher)
     {
         $this->userRepository = $userRepository;
+        $this->userPasswordHasher = $userPasswordHasher;
     }
 
     public function getUserById(string $id): ?User
     {
-        return $this->userRepository->findById($id);
+        try {
+            $uuid = Uuid::fromString($id);
+        } catch (\InvalidArgumentException $e) {
+            throw new BadRequestHttpException('Invalid UUID: '.$id);
+        }
+
+        return $this->userRepository->getUserById($uuid);
     }
 
-    public function getAllUsers(): ?array
+    public function getAllUsers(): array
     {
         return $this->userRepository->getAllUsers();
     }
 
     public function createUser(Request $request): User
     {
-        $data = \json_decode($request->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        try {
+            $data = \json_decode($request->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw new BadRequestHttpException('Invalid JSON data: '.$e->getMessage());
+        }
 
-        $username = $data['username'];
+        $name = $data['name'];
         $email = $data['email'];
         $password = $data['password'];
 
-        $hashedPassword = \password_hash($password, \PASSWORD_DEFAULT);
-
         $user = new User(
-            $username,
-            $email,
-            $hashedPassword
+            $name,
+            $email
         );
 
-        $this->userRepository->save($user);
+        $hashedPassword = $this->userPasswordHasher->hashPassword(
+            $user,
+            $password
+        );
+        $user->setPassword($hashedPassword);
+
+        $this->userRepository->saveUser($user);
 
         return $user;
     }
 
-    /**
-     * @throws \JsonException
-     */
     public function updateUser(Request $request, string $id): ?User
     {
-        $uuid = Uuid::fromString($id);
-        $user = $this->userRepository->findById($uuid);
+        try {
+            $uuid = Uuid::fromString($id);
+        } catch (\InvalidArgumentException $e) {
+            throw new BadRequestHttpException('Invalid UUID: '.$id);
+        }
+
+        try {
+            $data = \json_decode($request->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw new BadRequestHttpException('Invalid JSON data: '.$e->getMessage());
+        }
+
+        $user = $this->userRepository->getUserById($uuid);
 
         if (!$user) {
             return null;
         }
-
-        $data = \json_decode($request->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
         $user->setName($data['name'] ?? $user->getName());
         $user->setEmail($data['email'] ?? $user->getEmail());
@@ -71,24 +94,31 @@ class UserService
             $user->setPassword(\password_hash($data['password'], \PASSWORD_BCRYPT));
         }
 
-        $user->setUpdatedAt(new \DateTimeImmutable());
-        $this->userRepository->update($user);
+        $user->setUpdatedAt(new \DateTime());
+
+        $this->userRepository->updateUser($user);
 
         return $user;
     }
 
     public function deleteUser(string $id): ?User
     {
-        $uuid = Uuid::fromString($id);
-        $user = $this->userRepository->findById($uuid);
+        try {
+            $uuid = Uuid::fromString($id);
+        } catch (\InvalidArgumentException $e) {
+            throw new BadRequestHttpException('Invalid UUID: '.$id);
+        }
+
+        $user = $this->userRepository->getUserById($uuid);
 
         if (!$user) {
             return null;
         }
 
-        $user->setUpdatedAt(new \DateTimeImmutable());
-        $user->setDeletedAt(new \DateTimeImmutable());
-        $this->userRepository->update($user);
+        $user->setUpdatedAt(new \DateTime());
+        $user->setDeletedAt(new \DateTime());
+
+        $this->userRepository->deleteUser($user);
 
         return $user;
     }
