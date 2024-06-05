@@ -5,15 +5,16 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Infrastructure\Repository;
+namespace App\Tests\Sesame\Infrastructure\Repository;
 
-use App\Sesame\Infrastructure\Repository\UserRepository;
+use App\Sesame\Infrastructure\Repository\WorkEntryRepository;
+use App\Tests\Infrastructure\Repository\covers;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
 use PHPUnit\Framework\TestCase;
 
-#[covers(UserRepository::class)]
-final class UserRepositoryTest extends TestCase
+#[covers(WorkEntryRepository::class)]
+final class WorkEntryRepositoryTest extends TestCase
 {
     public function testConstructor(): void
     {
@@ -22,7 +23,7 @@ final class UserRepositoryTest extends TestCase
 
         $registry->method('getManagerForClass')->willReturn($objectManager);
 
-        $repository = new UserRepository($registry);
+        $repository = new WorkEntryRepository($registry);
         self::assertNotNull($repository);
     }
 }

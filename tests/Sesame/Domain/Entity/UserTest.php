@@ -5,9 +5,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Domain\Entity;
+namespace App\Tests\Sesame\Domain\Entity;
 
 use App\Sesame\Domain\Entity\User;
+use App\Tests\Domain\Entity\covers;
 use PHPUnit\Framework\TestCase;
 
 #[covers(User::class)]

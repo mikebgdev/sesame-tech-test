@@ -21,12 +21,12 @@ use App\Shared\Domain\Bus\Command\CommandBus;
 use App\Shared\Domain\Bus\Query\QueryBus;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
+use Ramsey\Uuid\Exception\InvalidUuidStringException;
 use Ramsey\Uuid\Uuid;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class WorkEntryApiController extends AbstractController
@@ -61,10 +61,6 @@ class WorkEntryApiController extends AbstractController
                 )
             ),
             new OA\Response(
-                response: Response::HTTP_BAD_REQUEST,
-                description: 'Invalid User UUID'
-            ),
-            new OA\Response(
                 response: Response::HTTP_UNAUTHORIZED,
                 description: 'User not authenticated'
             ),
@@ -85,17 +81,12 @@ class WorkEntryApiController extends AbstractController
             return new JsonResponse(['message' => 'User not authenticated'], Response::HTTP_UNAUTHORIZED);
         }
 
-        //        try {
         /** @var GetAllWorkEntriesByUseResponse $getAllWorkEntriesByUseResponse */
         $getAllWorkEntriesByUseResponse = $this->queryBus->ask(
             new GetAllWorkEntriesByUserQuery($user->getId())
         );
 
         $workEntries = $getAllWorkEntriesByUseResponse->getWorkEntries();
-        //        } catch (BadRequestHttpException $e) {
-        //            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
-        //        }
-        // TODO repasar Error Responses
 
         if ([] === $workEntries) {
             return new JsonResponse(['message' => 'WorkEntries not found'], Response::HTTP_NOT_FOUND);
@@ -121,7 +112,7 @@ class WorkEntryApiController extends AbstractController
             ),
             new OA\Response(
                 response: Response::HTTP_BAD_REQUEST,
-                description: 'Invalid User UUID'
+                description: 'Invalid WorkEntry UUID'
             ),
             new OA\Response(
                 response: Response::HTTP_UNAUTHORIZED,
@@ -144,18 +135,17 @@ class WorkEntryApiController extends AbstractController
             return new JsonResponse(['message' => 'User not authenticated'], Response::HTTP_UNAUTHORIZED);
         }
 
-        //        try {
-        $uuid = Uuid::fromString($id);
-        /** @var GetWorkEntryByIdResponse $getWorkEntryByIdResponse */
-        $getWorkEntryByIdResponse = $this->queryBus->ask(
-            new GetWorkEntryByIdQuery($uuid)
-        );
+        try {
+            $uuid = Uuid::fromString($id);
+            /** @var GetWorkEntryByIdResponse $getWorkEntryByIdResponse */
+            $getWorkEntryByIdResponse = $this->queryBus->ask(
+                new GetWorkEntryByIdQuery($uuid)
+            );
 
-        $workEntry = $getWorkEntryByIdResponse->getWorkEntry();
-        //        } catch (BadRequestHttpException $e) {
-        //            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
-        //        }
-        // TODO repasar Error Responses
+            $workEntry = $getWorkEntryByIdResponse->getWorkEntry();
+        } catch (InvalidUuidStringException $e) {
+            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
 
         if (null === $workEntry) {
             return new JsonResponse(['message' => 'WorkEntry not found'], Response::HTTP_NOT_FOUND);
@@ -173,14 +163,11 @@ class WorkEntryApiController extends AbstractController
         responses: [
             new OA\Response(
                 response: Response::HTTP_CREATED,
-                description: 'WorkEntry created successfully', ),
-            new OA\Response(
-                response: Response::HTTP_BAD_REQUEST,
-                description: 'Invalid JSON data'
+                description: 'WorkEntry created successfully',
             ),
             new OA\Response(
-                response: Response::HTTP_NOT_FOUND,
-                description: 'WorkEntry not started'
+                response: Response::HTTP_UNAUTHORIZED,
+                description: 'User not authenticated'
             ),
         ]
     )]
@@ -195,17 +182,12 @@ class WorkEntryApiController extends AbstractController
             return new JsonResponse(['message' => 'User not authenticated'], Response::HTTP_UNAUTHORIZED);
         }
 
-        //        try {
         $this->commandBus->dispatch(
             new StartWorkEntryCommand(
                 $user->getId()
             )
         );
-        //        } catch (BadRequestHttpException $e) {
-        //            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
-        //        }
 
-        // TODO repasar Error Responses
         return new JsonResponse('WorkEntry created successfully', Response::HTTP_CREATED);
     }
 
@@ -229,7 +211,11 @@ class WorkEntryApiController extends AbstractController
             ),
             new OA\Response(
                 response: Response::HTTP_BAD_REQUEST,
-                description: 'Invalid UUID'
+                description: 'Invalid WorkEntry UUID'
+            ),
+            new OA\Response(
+                response: Response::HTTP_UNAUTHORIZED,
+                description: 'User not authenticated'
             ),
             new OA\Response(
                 response: Response::HTTP_NOT_FOUND,
@@ -248,17 +234,18 @@ class WorkEntryApiController extends AbstractController
             return new JsonResponse(['message' => 'User not authenticated'], Response::HTTP_UNAUTHORIZED);
         }
 
-        //        try {
-        $this->commandBus->dispatch(
-            new EndWorkEntryCommand(
-                $id
-            )
-        );
-        //        } catch (BadRequestHttpException $e) {
-        //            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
-        //        }
+        try {
+            $this->commandBus->dispatch(
+                new EndWorkEntryCommand(
+                    $id
+                )
+            );
+        } catch (\RuntimeException $e) {
+            return new JsonResponse($e->getMessage(), Response::HTTP_NOT_FOUND);
+        } catch (InvalidUuidStringException $e) {
+            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
 
-        // TODO repasar Error Responses
         return new JsonResponse('WorkEntry ended successfully', Response::HTTP_OK);
     }
 
@@ -285,6 +272,10 @@ class WorkEntryApiController extends AbstractController
                 description: 'Invalid UUID'
             ),
             new OA\Response(
+                response: Response::HTTP_UNAUTHORIZED,
+                description: 'User not authenticated'
+            ),
+            new OA\Response(
                 response: Response::HTTP_NOT_FOUND,
                 description: 'WorkEntry not found'
             ),
@@ -301,17 +292,18 @@ class WorkEntryApiController extends AbstractController
             return new JsonResponse(['message' => 'User not authenticated'], Response::HTTP_UNAUTHORIZED);
         }
 
-        //        try {
-        $this->commandBus->dispatch(
-            new DeleteWorkEntryCommand(
-                $id
-            )
-        );
-        //        } catch (BadRequestHttpException $e) {
-        //            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
-        //        }
+        try {
+            $this->commandBus->dispatch(
+                new DeleteWorkEntryCommand(
+                    $id
+                )
+            );
+        } catch (\RuntimeException $e) {
+            return new JsonResponse($e->getMessage(), Response::HTTP_NOT_FOUND);
+        } catch (InvalidUuidStringException $e) {
+            return new JsonResponse($e->getMessage(), Response::HTTP_BAD_REQUEST);
+        }
 
-        // TODO repasar Error Responses
         return new JsonResponse('WorkEntry deleted successfully', Response::HTTP_NO_CONTENT);
     }
 }
