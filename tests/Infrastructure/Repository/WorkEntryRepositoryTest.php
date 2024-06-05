@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Infrastructure\Repository;
 
-use App\Infrastructure\Repository\WorkEntryRepository;
+use App\Sesame\Infrastructure\Repository\WorkEntryRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
 use PHPUnit\Framework\TestCase;

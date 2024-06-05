@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Domain\Entity;
 
-use App\Domain\Entity\User;
+use App\Sesame\Domain\Entity\User;
 use PHPUnit\Framework\TestCase;
 
 #[covers(User::class)]

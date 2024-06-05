@@ -2,7 +2,7 @@ security:
     enable_authenticator_manager: true
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
-        App\Domain\Entity\User:
+        App\Sesame\Domain\Entity\User:
             algorithm: auto
 
 #        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
@@ -10,7 +10,7 @@ security:
     providers:
         app_user_provider:
             entity:
-                class: App\Domain\Entity\User
+                class: App\Sesame\Domain\Entity\User
                 property: email
 
     firewalls:
