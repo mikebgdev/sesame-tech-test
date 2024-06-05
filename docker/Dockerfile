@@ -19,6 +19,7 @@ RUN set -eux; \
 		intl \
 		opcache \
 		zip \
+    pdo_mysql \
     ;
 
 RUN apk update && \
@@ -26,7 +27,7 @@ RUN apk update && \
 
 RUN apk add libpng-dev libjpeg-turbo-dev freetype-dev
 RUN apk update
-RUN docker-php-ext-install gd
+RUN docker-php-ext-install pdo pdo_mysql gd
 
 # Install nodejs npm
 RUN apk update && apk add --no-cache \
@@ -40,7 +41,7 @@ COPY --from=composer/composer:2-bin --link /composer /usr/bin/composer
 
 ARG CACHEBUST
 
-COPY ../docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENTRYPOINT ["docker-entrypoint.sh"]
