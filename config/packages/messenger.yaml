@@ -4,12 +4,14 @@ framework:
         # failure_transport: failed
 
         transports:
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
             # https://symfony.com/doc/current/messenger.html#transport-configuration
             # async: '%env(MESSENGER_TRANSPORT_DSN)%'
             # failed: 'doctrine://default?queue_name=failed'
             # sync: 'sync://'
 
         routing:
+            'App\Shared\Domain\Bus\Event\Event': async
             # Route your messages to the transports
             # 'App\Message\YourMessage': async
 

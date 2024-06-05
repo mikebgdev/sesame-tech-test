@@ -5,10 +5,10 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Infrastructure\Bus\Command;
+namespace App\Shared\Infrastructure\Bus\Event;
 
-use App\Shared\Domain\Bus\Command\Command;
-use App\Shared\Domain\Bus\Command\CommandBus;
+use App\Shared\Domain\Bus\Event\Event;
+use App\Shared\Domain\Bus\Event\EventBus;
 use App\Shared\Infrastructure\Bus\HandlerBuilder;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\Exception\NoHandlerForMessageException;
@@ -16,31 +16,30 @@ use Symfony\Component\Messenger\Handler\HandlersLocator;
 use Symfony\Component\Messenger\MessageBus;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
 
-final class InMemoryCommandBus implements CommandBus
+final class InMemoryEventBus implements EventBus
 {
     private MessageBus $bus;
 
     /**
      * @throws \ReflectionException
      */
-    public function __construct(
-        iterable $commandHandlers
-    ) {
+    public function __construct(iterable $eventHandlers)
+    {
         $this->bus = new MessageBus([
             new HandleMessageMiddleware(
                 new HandlersLocator(
-                    HandlerBuilder::fromCallables($commandHandlers),
+                    HandlerBuilder::fromCallables($eventHandlers),
                 ),
             ),
         ]);
     }
 
-    public function dispatch(Command $command): void
+    public function publish(Event $event): void
     {
         try {
-            $this->bus->dispatch($command);
+            $this->bus->dispatch($event);
         } catch (NoHandlerForMessageException $e) {
-            throw new \InvalidArgumentException(\sprintf('The command has not a valid handler: %s', $command::class));
+            throw new \InvalidArgumentException(\sprintf('The event has not a valid handler: %s', $event::class));
         } catch (HandlerFailedException $e) {
             throw $e->getPrevious();
         }

@@ -21,6 +21,9 @@ final class InMemoryQueryBus implements QueryBus
 {
     private MessageBus $bus;
 
+    /**
+     * @throws \ReflectionException
+     */
     public function __construct(iterable $queryHandlers)
     {
         $this->bus = new MessageBus([
