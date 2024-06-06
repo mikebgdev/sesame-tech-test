@@ -26,7 +26,6 @@ final class InMemoryQueryBus implements QueryBus
      */
     public function __construct(iterable $queryHandlers)
     {
-        \dump($queryHandlers);
         $this->bus = new MessageBus([
             new HandleMessageMiddleware(
                 new HandlersLocator(
