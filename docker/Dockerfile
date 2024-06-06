@@ -18,6 +18,7 @@ RUN set -eux; \
 		apcu \
 		intl \
 		opcache \
+    xdebug \
 		zip \
     pdo_mysql \
     ;
@@ -33,6 +34,9 @@ RUN docker-php-ext-install pdo pdo_mysql gd
 RUN apk update && apk add --no-cache \
     nodejs \
     npm
+
+# Configurar Xdebug
+RUN echo "xdebug.mode=coverage" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 # Instalar Composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
