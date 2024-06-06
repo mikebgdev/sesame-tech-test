@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace App\Sesame\Application\Command\Handler;
 
 use App\Sesame\Application\Command\UserUpdateCommand;
-use App\Sesame\Application\Event\WorkEntryStarted;
+use App\Sesame\Application\Event\UserUpdated;
 use App\Sesame\Domain\Entity\User;
 use App\Sesame\Domain\Repository\UserRepositoryInterface;
 use App\Shared\Domain\Bus\Command\CommandHandler;
@@ -49,7 +49,7 @@ final class UserUpdateHandler implements CommandHandler
 
         $this->userRepository->updateUser($user);
 
-        $this->eventBus->publish(new WorkEntryStarted($user->getId()->toString(), $user->getUpdatedAt()));
+        $this->eventBus->publish(new UserUpdated($user->getId()->toString(), $user->getUpdatedAt()));
 
         return $user;
     }

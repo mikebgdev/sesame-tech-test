@@ -12,12 +12,12 @@ use App\Shared\Domain\Bus\Event\Event;
 final class WorkEntryEnded implements Event
 {
     private string $workEntryId;
-    private \DateTime $updatedAt;
+    private \DateTime $endedAt;
 
-    public function __construct(string $workEntryId, \DateTime $updatedAt)
+    public function __construct(string $workEntryId, \DateTime $endedAt)
     {
         $this->workEntryId = $workEntryId;
-        $this->updatedAt = $updatedAt;
+        $this->endedAt = $endedAt;
     }
 
     public function getEventName(): string
@@ -29,7 +29,7 @@ final class WorkEntryEnded implements Event
     {
         return [
             'workEntryId' => $this->workEntryId,
-            'updatedAt' => $this->updatedAt->format('Y-m-d H:i:s'),
+            'endedAt' => $this->endedAt->format('Y-m-d H:i:s'),
         ];
     }
 }

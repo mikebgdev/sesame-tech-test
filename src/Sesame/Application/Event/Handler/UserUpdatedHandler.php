@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace App\Sesame\Application\Event\Handler;
 
-use App\Sesame\Application\Event\WorkEntryStarted;
+use App\Sesame\Application\Event\UserUpdated;
 use App\Shared\Domain\Bus\Event\EventHandler;
 use Psr\Log\LoggerInterface;
 
@@ -20,7 +20,7 @@ final class UserUpdatedHandler implements EventHandler
         $this->logger = $logger;
     }
 
-    public function __invoke(WorkEntryStarted $event): void
+    public function __invoke(UserUpdated $event): void
     {
         $this->logger->info('User updated: ', $event->getPayload());
     }

@@ -96,7 +96,7 @@ final class UserTest extends TestCase
         $user = new User('John Doe', 'john.doe@example.com');
         $user->eraseCredentials();
 
-        self::assertTrue(true); // Just to ensure method can be called, as it does nothing.
+        self::assertTrue(true);
     }
 
     public function testGetUserIdentifier(): void
