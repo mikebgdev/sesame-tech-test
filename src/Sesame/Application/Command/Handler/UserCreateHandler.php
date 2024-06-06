@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace App\Sesame\Application\Command\Handler;
 
 use App\Sesame\Application\Command\UserCreateCommand;
-use App\Sesame\Application\Event\WorkEntryStarted;
+use App\Sesame\Application\Event\UserCreated;
 use App\Sesame\Domain\Entity\User;
 use App\Sesame\Domain\Repository\UserRepositoryInterface;
 use App\Shared\Domain\Bus\Command\CommandHandler;
@@ -36,7 +36,7 @@ final class UserCreateHandler implements CommandHandler
 
         $this->userRepository->saveUser($user);
 
-        $this->eventBus->publish(new WorkEntryStarted($user->getId()->toString(), $user->getCreatedAt()));
+        $this->eventBus->publish(new UserCreated($user->getId()->toString(), $user->getCreatedAt()));
 
         return $user;
     }

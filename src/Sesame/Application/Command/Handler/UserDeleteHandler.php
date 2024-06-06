@@ -8,7 +8,7 @@ declare(strict_types=1);
 namespace App\Sesame\Application\Command\Handler;
 
 use App\Sesame\Application\Command\UserDeleteCommand;
-use App\Sesame\Application\Event\WorkEntryStarted;
+use App\Sesame\Application\Event\UserDeleted;
 use App\Sesame\Domain\Entity\User;
 use App\Sesame\Domain\Repository\UserRepositoryInterface;
 use App\Shared\Domain\Bus\Command\CommandHandler;
@@ -40,7 +40,7 @@ final class UserDeleteHandler implements CommandHandler
 
         $this->userRepository->deleteUser($user);
 
-        $this->eventBus->publish(new WorkEntryStarted($user->getId()->toString(), $user->getDeletedAt()));
+        $this->eventBus->publish(new UserDeleted($user->getId()->toString(), $user->getDeletedAt()));
 
         return $user;
     }

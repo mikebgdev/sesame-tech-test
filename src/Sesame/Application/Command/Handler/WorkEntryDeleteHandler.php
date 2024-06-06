@@ -32,7 +32,7 @@ final class WorkEntryDeleteHandler implements CommandHandler
         $workEntry = $this->workEntryRepository->getWorkEntryById($uuid);
 
         if (!$workEntry) {
-            return null;
+            throw new \RuntimeException('Work entry not found');
         }
 
         $workEntry->setUpdatedAt(new \DateTime());

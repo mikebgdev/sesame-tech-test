@@ -200,7 +200,7 @@ class UserApiController extends AbstractController
             ),
             new OA\Response(
                 response: Response::HTTP_BAD_REQUEST,
-                description: 'Syntax Error | Invalid UUID'
+                description: 'Syntax Error'
             ),
             new OA\Response(
                 response: Response::HTTP_NOT_FOUND,

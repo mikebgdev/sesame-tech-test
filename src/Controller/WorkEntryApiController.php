@@ -25,7 +25,6 @@ use Ramsey\Uuid\Exception\InvalidUuidStringException;
 use Ramsey\Uuid\Uuid;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -72,7 +71,7 @@ class WorkEntryApiController extends AbstractController
     )]
     #[OA\Tag(name: 'WorkEntry')]
     #[IsGranted('ROLE_USER')]
-    public function getAllWorkEntriesByUser(Request $request): JsonResponse
+    public function getAllWorkEntriesByUser(): JsonResponse
     {
         /** @var ?User $user */
         $user = $this->getUser();
@@ -126,7 +125,7 @@ class WorkEntryApiController extends AbstractController
     )]
     #[OA\Tag(name: 'WorkEntry')]
     #[IsGranted('ROLE_USER')]
-    public function getWorkEntryById(Request $request, string $id): JsonResponse
+    public function getWorkEntryById(string $id): JsonResponse
     {
         /** @var ?User $user */
         $user = $this->getUser();
@@ -173,7 +172,7 @@ class WorkEntryApiController extends AbstractController
     )]
     #[OA\Tag(name: 'WorkEntry')]
     #[IsGranted('ROLE_USER')]
-    public function startWorkEntry(Request $request): JsonResponse
+    public function startWorkEntry(): JsonResponse
     {
         /** @var ?User $user */
         $user = $this->getUser();
@@ -225,7 +224,7 @@ class WorkEntryApiController extends AbstractController
     )]
     #[OA\Tag(name: 'WorkEntry')]
     #[IsGranted('ROLE_USER')]
-    public function endWorkEntry(Request $request, string $id): JsonResponse
+    public function endWorkEntry(string $id): JsonResponse
     {
         /** @var ?User $user */
         $user = $this->getUser();
