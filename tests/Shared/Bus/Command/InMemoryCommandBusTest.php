@@ -25,4 +25,21 @@ final class InMemoryCommandBusTest extends TestCase
 
         $commandBus->dispatch($command);
     }
+
+    public function testDispatchWithInvalidArgumentException(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $command = $this->createMock(Command::class);
+
+        $handler1 = new class() {
+            public function __invoke(\stdClass $command): void
+            {
+            }
+        };
+
+        $commandBus = new InMemoryCommandBus([$handler1]);
+
+        $commandBus->dispatch($command);
+    }
 }
